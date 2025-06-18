@@ -1,4 +1,8 @@
-def cypher(texto,clave):
+MOSTRAR_PROCESO = False
+
+## Funcion de cifrado cimetrico XOR 
+# Es la misma operacion para cifrar y decifrar
+def cypher_decypher(texto, clave, mostrar):
     cypher_array = []
     key_array = []
     cypher_word = ''
@@ -6,39 +10,40 @@ def cypher(texto,clave):
     #Pasa el texto a int
     for i in texto:
         cypher_array.append(ord(i))
-    
-    print(cypher_array)
 
     #Pasa la clave a int
     for i in clave:
         key_array.append(ord(i))
 
-    print(key_array)
+    #Mostrar el proceso
+    if mostrar == True:
+        print(cypher_array)
+        print(key_array)
     
     #Cifra la palabra
     aux = 0
     for i in range(0,len(cypher_array)):
         cypher_char = cypher_array[i] ^ key_array[aux]
-        #cypher_char += 33
-        #print(f"Resultado de XOR: {cypher_char}")
         aux += 1
         if aux >= len(key_array):
             aux = 0
         cypher_word = cypher_word + chr(cypher_char)
-        #print(f"Letra agregada  : {chr(cypher_char)}")
-        #print(f"Palabra cifrada : {cypher_word}")
 
-
+        #Mostrar el proceso
+        if mostrar == True:
+            print(f"Resultado de XOR: {cypher_char}")
+            if cypher_char < 33:
+                print(f"Letra agregada  : CTRL + {cypher_char}") #Muestra el valor ASCII del caracter de control que dio como resultado de la operacion
+            else:
+                print(f"Letra agregada  : {chr(cypher_char)}")
+            print(f"Palabra cifrada : {cypher_word}")
 
     return cypher_word
-
-def decypher(texto):
-    return texto
 
 if __name__ == "__main__":
     texto = input ("Ingrese texto: ")
     clave = input ("Ingrese clave: ")
-    texto_cifrado = cypher(texto,clave)
+    texto_cifrado = cypher_decypher(texto,clave, MOSTRAR_PROCESO)
 
     print(f"Texto sin cifrar            : {texto}")
     print(f"Largo de texto sin cifrar   : {len(texto)}")
@@ -46,6 +51,6 @@ if __name__ == "__main__":
     print(f"Texto cifrado               : {texto_cifrado}")
     print(f"Largo de texto cifrado      : {len(texto_cifrado)}")
 
-    texto_descifrado = cypher(texto_cifrado,clave)
+    texto_descifrado = cypher_decypher(texto_cifrado,clave, MOSTRAR_PROCESO)
     print(f"Texto cifrado               : {texto_descifrado}")
     print(f"Largo de texto cifrado      : {len(texto_descifrado)}")
