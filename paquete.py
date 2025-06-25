@@ -1,5 +1,6 @@
 from cifrado import cypher_decypher as cy
 import crcmod as crc
+import random
 
 #Agrega la secuencia en el paquete
 def sequencer(array):
@@ -66,12 +67,17 @@ def len_add(array, cant_paq):
 
     return array
 
-#Calcula el CRC-16-IBM y lo agrega al final del paquete
-def crc_add(array):
+#Calcula CRC-16-IBM
+def calc_crc(data):
     crc16 = crc.predefined.mkCrcFun('crc-16')
+    crc_output = crc16(data.encode('utf-8'))
+    crc_binary = format(crc_output,'016b')
+    return crc_binary
+
+#Agrega el checksum CRC-16 al final del paquete
+def crc_add(array):
     for i in range(0,len(array)):
-        crc_output = crc16(array[i].encode('utf-8'))
-        crc_binary = format(crc_output,'016b')
+        crc_binary = calc_crc(array[i])
         print(f"CRC-16 calculado: {crc_binary}")
         array[i] += crc_binary
 
@@ -84,6 +90,72 @@ def end_add(array):
     for i in range(0,len(array)):
         array[i] += end
     return array
+
+def mixer(array):
+    mixed_array = array.copy()
+    random.shuffle(mixed_array)
+    print(f"Array sin mezclar       : {array}")
+    print("Largo de los elementos   : ",end="")
+    for i in array:
+        print(len(i),end=", ")
+    print()
+
+    print(f"Array mezclado      : {mixed_array}")
+    print("Largo de los elementos   : ",end="")
+    for i in mixed_array:
+        print(len(i),end=", ")
+    print()
+
+    return mixed_array
+
+#Mira si la integridad del paquete esta bien usando checksum
+def check_checksum(package):
+    check = True
+    print(f"Largo original  : {len(package)}")
+    check_sum = package[-24:-8]
+    crc_binary = calc_crc(package[:-24])
+
+    if check_sum != crc_binary:
+        check = False
+        print("ERROR!, Checksum no coincide")
+    else:
+        print("Checksum")
+        package = package[:-24]
+        print(f"Paquete cortado : {package}")
+        print(f"Largo Nuevo     : {len(package)}")
+        print()
+        
+    return package,check
+
+def data_dump(package):
+    seq = int(package[:8],2)
+    #seq = package[:8]
+
+    cant_paq = int(package[-8:],2)
+    #cant_paq = package[-8:]
+
+    cant_data = int(package[-16:-8],2)
+    #cant_data = package[-16:-8]
+
+    bin_data = package[8:-16]
+    data_text = ""
+
+    #print(f"Largo del paquete   : {len(package)}")
+    #print(f"Suma de las partes  : {len(seq) + len(cant_paq) + len(cant_data) + len(data)}")
+
+    for i in range(0,cant_data):
+        data_text += chr(int(bin_data[(8*i): (8*i) + 8],2))
+
+    print(f"Numero de secuencia             : {seq}")
+    print(f"Cantidad total de paquetes      : {cant_paq}")
+    print(f"Cantidad de datos en el paquete : {cant_data}")
+    print(f"Cantidad real de datos          : {len(bin_data)/8}")
+    print
+
+    return seq, data_text, cant_paq
+
+
+
 
 #Empaqueta los datos
 def packaging(text,key):
@@ -107,7 +179,7 @@ def packaging(text,key):
 
     #Agrega los datos cifrados al array
     print("Agregando datos cifrados...")
-    package_array = data_add(package_array, cy(text,key,False), cant_paq, size_key)
+    package_array = data_add(package_array, cy(text,key), cant_paq, size_key)
     print("-------------------------------------------------------------------------")
 
     #Agrega la cantidad de datos en el paquete y la cantidad total del paquete
@@ -127,6 +199,45 @@ def packaging(text,key):
 
     return package_array
 
+#Hace las operaciones de desempaquetado, ordenado y descifrado, sirve para este ejemplo
+def data(array,key):
+    mixed_tuples = []
+    cyphered_text = ""
+    for i in array:
+        mixed_tuples.append(depackaging(i,key))
+
+    ordered_data = [""] * len(mixed_tuples)
+    print(len(ordered_data))
+    for i in mixed_tuples:
+        ordered_data[i[0]] = i[1]
+    
+    for i in ordered_data:
+        cyphered_text += i
+
+    decyphered_text = cy(cyphered_text,key)
+    print(decyphered_text)
+
+
+
+    
+
+
+#Desempaqueta, Devuelve una "tupla" talque: [numero de sequencia, datos]
+def depackaging(package,key):
+    depackaged = package
+
+    print("Checkeando integridad")
+    depackaged,check = check_checksum(package)
+    print("-------------------------------------------------------------------------")
+    if check: 
+        print()
+        seq, data_text, cant_packages = data_dump(depackaged)
+        depackaged = [seq,data_text]
+        return depackaged
+    else:
+        print("Error!, Checksum malo")
+        #Aqui colocar como se sale
+
 
 if __name__ == "__main__":
     #texto = input("Ingrese texto: ")
@@ -134,3 +245,8 @@ if __name__ == "__main__":
     texto = "hola mundo!"
     clave = "rombo"
     paq = packaging(texto,clave)
+    print("Mezclando paquetes")
+    mixed_paq = mixer(paq)
+    print("-------------------------------------------------------------------------")
+    data(mixed_paq,clave)
+    
