@@ -23,18 +23,3 @@ def cypher_decypher(texto, clave):
         cypher_word = cypher_word + chr(cypher_char)
 
     return cypher_word
-
-if __name__ == "__main__":
-    texto = input ("Ingrese texto: ")
-    clave = input ("Ingrese clave: ")
-    texto_cifrado = cypher_decypher(texto,clave)
-
-    print(f"Texto sin cifrar            : {texto}")
-    print(f"Largo de texto sin cifrar   : {len(texto)}")
-
-    print(f"Texto cifrado               : {texto_cifrado}")
-    print(f"Largo de texto cifrado      : {len(texto_cifrado)}")
-
-    texto_descifrado = cypher_decypher(texto_cifrado,clave)
-    print(f"Texto cifrado               : {texto_descifrado}")
-    print(f"Largo de texto cifrado      : {len(texto_descifrado)}")

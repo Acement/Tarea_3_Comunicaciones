@@ -5,6 +5,7 @@ from time import sleep
 from paquete import packaging
 from simulacion_errores import error_sim
 
+# Visualización del paquete
 def ver_paquete(paquete):
     seq = paquete[0]
 
@@ -40,34 +41,41 @@ async def handler(websocket):
             seq = False
 
             for i, paq in enumerate(original_paq):
+                print("Simulando errores...")
                 while True:
-                    print("Simulando errores...")
                     error_paq = error_sim(paq)
                     print(f"Enviando paquete {i+1}...")
                     print(error_paq)
-                    if(random.uniform(0, 1) <= 0.   ): await websocket.send(error_paq)
+
+                    # Simulación de pérdida de paquete
+                    # Probabilidad del 80% de enviar el paquete
+                    if(random.uniform(0, 1) <= 0.8): await websocket.send(error_paq)
+
                     try:
                         client_message = await asyncio.wait_for(websocket.recv(), timeout=3.0)  # espera máximo 5 segundos
                         print("Mensaje recibido:", client_message)
                         if(random.uniform(0, 1) <= 0.8):
-                            if int(client_message) == seq: 
+                            if int(client_message) == seq:
+                                # Paquete recibido correctamente (ACK)
                                 seq = not seq
                                 break
                             else:
-                                print(f"Reenviando paquete {i+1}")
+                                # Paquete recibido incorrectamente (NAK)
+                                print(f"Reenviando paquete {i+1} por NAK")
                         else:
-                            print(f"Reenviando paquete {i+1} DUPLICADO")
+                            # Simulación de paquete de confirmación perdido
+                            print(f"Reenviando paquete {i+1} por PÉRDIDA de notificación")
                     except asyncio.TimeoutError:
-                        print("No se recibió ningún mensaje en 3 segundos.")
+                        # Paquete de confirmación con recepción tardía o perdido
+                        print(f"Reenviando paquete {i+1} por recepción TARDÍA o pérdida de notificación")
             
-
     except websockets.exceptions.ConnectionClosedOK:
         print("Cliente desconectado.")
 
 async def main():
     async with websockets.serve(handler, "0.0.0.0", 8765):
         print("Servidor escuchando en puerto 8765...")
-        await asyncio.Future()  # Run forever
+        await asyncio.Future()
 
 if __name__ == "__main__":
     asyncio.run(main())

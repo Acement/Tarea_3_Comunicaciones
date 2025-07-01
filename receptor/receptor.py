@@ -14,12 +14,24 @@ def verificacion(prev_sec, seq, bin_data, datos_crc, cant_paq, cant_data, crc):
             and cant_paq >= int(len(lista)) 
             and prev_sec != seq)
 
-def descifrar(datos_cifrados):
+def verificar_crc16(datos_crc,crc):
+    return crc == calc_crc(datos_crc)
+
+def verificar_cant_paq(cant_paq):
+    return int(len(lista)) < cant_paq
+
+def verificar_cant_data(bin_data):
+    return cant_data == int(len(bin_data)/8) 
+
+def verificar_prev_seq(prev_seq,seq):
+    return prev_seq != seq
+
+def traducir(datos_cifrados):
     data_text = ""
     for i in range (0, len(datos_cifrados) // 8):
         data_text += chr(int(datos_cifrados[(8*i): (8*i) + 8],2))
 
-    return cy(data_text, CLAVE)
+    return data_text
 
 async def chat():
     uri = "ws://25.53.150.13:8765"
@@ -29,28 +41,45 @@ async def chat():
             mensaje_original = input("Enviar mensaje: ")
             mensaje = mensaje_original
             await websocket.send(mensaje)
-            prev_sec = True
+            prev_seq = True
             cant_paq = 1
-            while len(lista)<cant_paq:
-                # Cliente envía texto plano
-                
+            while len(lista) < cant_paq:
+                # Espera el paquete enviado por el emisor
                 server_message = await websocket.recv()
-                if (server_message !=""):
+                if (len(server_message) >= 49):
                     seq, bin_data, cant_paq, cant_data, crc = data_dump(server_message)
-                    seq = seq=="1"
-                    mensaje = descifrar(bin_data)
 
-                    if (verificacion(prev_sec, seq, bin_data, server_message[:-24], cant_paq,cant_data, crc)):
-                        prev_sec = seq
-                        lista.append(mensaje)
-                        await websocket.send(str(int(seq)))
-                    else:
-                        await websocket.send(str(int(prev_sec)))
+                    mensaje = traducir(mensaje)
+                    mensaje = cy(mensaje, CLAVE)
+
+                    # Verificación de errores
+                    if (not verificar_crc16(seq+bin_data+cant_paq+cant_data, crc)):
+                        await websocket.send("1000000"+prev_seq)
+                        continue
+                    if (not verificar_cant_paq(cant_paq)):
+                        await websocket.send("0100000"+prev_seq)
+                        continue
+                    if (not verificar_cant_data(bin_data)):
+                        await websocket.send("0010000"+prev_seq)
+                        continue
+                    if (not verificar_prev_seq(prev_seq,seq)):
+                        await websocket.send("0001000"+prev_seq)
+                        continue
+
+                    prev_seq = seq
+                    lista.append(mensaje)
+                    await websocket.send("0000000"+seq)
                         
-                    print(f"Mensaje: {mensaje}")     
+                    print(f"Mensaje: {mensaje}")
+                else:
+                    await websocket.send("0000100"+prev_seq) 
+                        
             print("largo lista : ", len(lista))
             print (''.join(lista)==mensaje_original)     
-            print("Paquetes recibidos con éxito!", ''.join(lista))        
+            print("Paquetes recibidos con éxito!", ''.join(lista))
+
+            lista = []    
+
         except websockets.exceptions.ConnectionClosedOK:
             print("Servidor desconectado.")
 
