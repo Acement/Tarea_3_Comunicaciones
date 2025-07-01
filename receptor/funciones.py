@@ -28,15 +28,15 @@ def check_checksum(package):
     return package,check
 
 def data_dump(package):
-    seq = package[0]
-    bin_data = package[1:-40]
+    #seq = package[0]
+    bin_data = package[0:-40]
 
     cant_paq = int(package[-40:-32],2)
     cant_data = int(package[-32:-24],2)
 
     crc = package[-24:-8]
 
-    return seq, bin_data, cant_data,cant_paq, crc
+    return bin_data, cant_data,cant_paq, crc
 
 #Hace las operaciones de desempaquetado, ordenado y descifrado, sirve para este ejemplo
 def data(array,key):

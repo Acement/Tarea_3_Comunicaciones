@@ -41,10 +41,9 @@ async def handler(websocket):
             seq = False
 
             for i, paq in enumerate(original_paq):
-                print("Simulando errores...")
+                print(f"Enviando paquete {i+1}...")
                 while True:
                     error_paq = error_sim(paq)
-                    print(f"Enviando paquete {i+1}...")
                     print(error_paq)
 
                     # Simulación de pérdida de paquete
@@ -54,10 +53,12 @@ async def handler(websocket):
                     try:
                         client_message = await asyncio.wait_for(websocket.recv(), timeout=3.0)  # espera máximo 5 segundos
                         print("Mensaje recibido:", client_message)
+                        if (len(client_message) != 8):
+                            print(f"Reenviando paquete {i+1} por comprobación corrupta")
+                            continue
                         if(random.uniform(0, 1) <= 0.8):
-                            if int(client_message) == seq:
+                            if "00000000" == client_message:
                                 # Paquete recibido correctamente (ACK)
-                                seq = not seq
                                 break
                             else:
                                 # Paquete recibido incorrectamente (NAK)

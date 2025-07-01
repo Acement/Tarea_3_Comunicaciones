@@ -41,38 +41,36 @@ async def chat():
             mensaje_original = input("Enviar mensaje: ")
             mensaje = mensaje_original
             await websocket.send(mensaje)
-            prev_seq = True
             cant_paq = 1
             while len(lista) < cant_paq:
                 # Espera el paquete enviado por el emisor
                 server_message = await websocket.recv()
-                if (len(server_message) >= 49):
-                    seq, bin_data, cant_paq, cant_data, crc = data_dump(server_message)
+                if (len(server_message) >= 48):
+                    bin_data, cant_paq, cant_data, crc = data_dump(server_message)
 
                     mensaje = traducir(mensaje)
                     mensaje = cy(mensaje, CLAVE)
 
                     # Verificación de errores
-                    if (not verificar_crc16(seq+bin_data+cant_paq+cant_data, crc)):
-                        await websocket.send("1000000"+prev_seq)
+                    if (not verificar_crc16(bin_data+cant_paq+cant_data, crc)):
+                        await websocket.send("10001111")
                         continue
                     if (not verificar_cant_paq(cant_paq)):
-                        await websocket.send("0100000"+prev_seq)
+                        await websocket.send("01001111")
                         continue
                     if (not verificar_cant_data(bin_data)):
-                        await websocket.send("0010000"+prev_seq)
+                        await websocket.send("00101111")
                         continue
-                    if (not verificar_prev_seq(prev_seq,seq)):
-                        await websocket.send("0001000"+prev_seq)
-                        continue
+                    #if (not verificar_prev_seq(prev_seq,seq)):
+                    #    await websocket.send("00010000")
+                    #    continue
 
-                    prev_seq = seq
                     lista.append(mensaje)
-                    await websocket.send("0000000"+seq)
+                    await websocket.send("00000000")
                         
                     print(f"Mensaje: {mensaje}")
                 else:
-                    await websocket.send("0000100"+prev_seq) 
+                    await websocket.send("00011111") 
                         
             print("largo lista : ", len(lista))
             print (''.join(lista)==mensaje_original)     
