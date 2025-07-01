@@ -3,10 +3,10 @@ import crcmod as crc
 import random
 
 # Agregar el valor de secuencia
-#def seq_add(array):
-#    for i in range(0,len(array)):
-#        array[i] += str(i%2)
-#    return array
+def seq_add(array):
+    for i in range(0,len(array)):
+        array[i] += str(i%2)
+    return array
 
 #Agrega los datos cifrados al array
 def data_add(array, text, cant, size):
@@ -104,7 +104,7 @@ def packaging(text,key):
 
     package_array = [""] * cant_paq
 
-    #package_array = seq_add(package_array)
+    package_array = seq_add(package_array)
     #Agrega los datos cifrados al array
     #print("Agregando datos cifrados...")
     package_array = data_add(package_array, cy(text,key), cant_paq, size_key)

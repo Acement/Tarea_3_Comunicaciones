@@ -28,10 +28,7 @@ async def handler(websocket):
     try:
         while True:
             # Espera mensaje del cliente
-            client_message = await websocket.recv()
-            print(f"Cliente: {client_message}")
-
-            texto = client_message
+            texto = "Muchos años después, frente al pelotón de fusilamiento, el coronel Aureliano Buendía había de recordar aquella tarde remota en que su padre lo llevó a conocer el hielo. Macondo era entonces una aldea de veinte casas de barro y cañabrava, construidas a la orilla de un río transparente."
             clave = "rombo"
             print("Empaquetando...")
             sleep(1)
@@ -57,10 +54,11 @@ async def handler(websocket):
                             print(f"Reenviando paquete {i+1} por comprobación corrupta")
                             continue
                         if(random.uniform(0, 1) <= 0.8):
-                            if "00000000" == client_message:
+                            if "0000"+(str(seq)*4) == client_message:
                                 # Paquete recibido correctamente (ACK)
+                                seq = not seq
                                 break
-                            else:
+                            else:   
                                 # Paquete recibido incorrectamente (NAK)
                                 print(f"Reenviando paquete {i+1} por NAK")
                         else:
