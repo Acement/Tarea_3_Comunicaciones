@@ -1,8 +1,8 @@
 import random
 
-CORRECT_SEND_PROB     = 0.70 # Probablidad de que se envie correctamente
-INCOMPLETE_SEND_PROB  = 0.15 # Probabilidad de que se envie incompleto
-INCORRECT_SEND_PROB   = 0.15 # Probabilidad de que se envie incorrectamente
+CORRECT_SEND_PROB     = 0.5 # Probablidad de que se envie correctamente
+INCOMPLETE_SEND_PROB  = 0.0 # Probabilidad de que se envie incompleto
+INCORRECT_SEND_PROB   = 0.5 # Probabilidad de que se envie incorrectamente
 
 def error_sim(message):
     send_opt = random.choices([0, 1, 2], weights=[CORRECT_SEND_PROB, INCOMPLETE_SEND_PROB, INCORRECT_SEND_PROB], k=1)[0]

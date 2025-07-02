@@ -17,4 +17,4 @@ def data_dump(package):
 
     crc = package[-24:-8]
 
-    return bin_data, cant_data,cant_paq, crc
+    return seq, bin_data, cant_data,cant_paq, crc

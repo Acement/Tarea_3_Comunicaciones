@@ -109,7 +109,7 @@ def packaging(text,key):
     #print("Agregando datos cifrados...")
     package_array = data_add(package_array, cy(text,key), cant_paq, size_key)
     #print("-------------------------------------------------------------------------")
-
+    
     #Agrega la cantidad de datos en el paquete y la cantidad total del paquete
     #print("Agregando cantidad")
     package_array = len_add(package_array, cant_paq)

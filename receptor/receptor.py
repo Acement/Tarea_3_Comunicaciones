@@ -1,8 +1,9 @@
 import websockets
+import asyncio
 from cifrado import cypher_decypher as cy
 from funciones import data_dump, calc_crc
 
-CLAVE = "rombo"
+CLAVE = "gato"
 lista = []
 
 def verificar_crc16(datos_crc,crc):
@@ -29,9 +30,9 @@ def calcular_paridad_impar(bitstring):
     return 0 if count_ones % 2 == 1 else 1
 
 def generar_confirmacion(error, prev_seq):
-    confirmacion = error+str(prev_seq)
+    confirmacion = error+str(int(prev_seq))
     bit_paridad = calcular_paridad_impar(confirmacion)
-    return confirmacion + bit_paridad
+    return confirmacion + str(bit_paridad)
 
 async def chat():
     global lista 
@@ -40,46 +41,50 @@ async def chat():
     async with websockets.connect(uri) as websocket:
         print("Conectado al servidor.")
         try:
-            cant_paq = 1
+            cant_paq_total = 1
             prev_seq = True
-            while len(lista) < cant_paq:
+            while len(lista) < cant_paq_total:
                 # Espera el paquete enviado por el emisor
                 server_message = await websocket.recv()
+                print(len(lista))
 
-                print(server_message)
                 if (len(server_message) >= 49):
                     seq, bin_data, cant_paq, cant_data, crc = data_dump(server_message)
-
                     mensaje = traducir(bin_data)
                     mensaje = cy(mensaje, CLAVE)
-                    print ("Mensaje recibido: ", mensaje)
+                    print("Mensaje recibido:", mensaje)
 
                     # Verificación de errores
                     if (not verificar_crc16(server_message[:-24], crc)):
                         await websocket.send(generar_confirmacion("001", prev_seq))
-                        print("Mensaje ", mensaje ," rechazado por fallo CRC.")
-                        continue
-                    if (not verificar_cant_paq(cant_paq)):
+                        print("\033[31mMensaje \033[0m", mensaje ,"\033[31m rechazado por fallo CRC.\033[0m")
+                        print()
+                    elif (not verificar_cant_paq(cant_paq)):
                         await websocket.send(generar_confirmacion("010", prev_seq))
-                        print("Mensaje ", mensaje ," rechazado por superar el máximo de paquetes.")
-                        continue
-                    if (not verificar_cant_data(cant_data, bin_data)):
+                        print("\033[31mMensaje \033[0m", mensaje ,"\033[31m rechazado por superar el máximo de paquetes.\033[0m")
+                        print()                       
+                    elif (not verificar_cant_data(cant_data, bin_data)):
                         await websocket.send(generar_confirmacion("011", prev_seq))
-                        print("Mensaje ", mensaje ," rechazado por incongruencia en la cantidad de datos. ")
-                        continue
-                    if (not verificar_prev_seq(prev_seq,seq)):
+                        print("\033[31mMensaje \033[0m", mensaje ,"\033[31m rechazado por incongruencia en la cantidad de datos. \033[0m")
+                        print()
+                    elif (not verificar_prev_seq(prev_seq,seq)):
+                        print("\033[31mMensaje \033[0m", mensaje ,"\033[31m eliminado por paquete duplicado. \033[0m")
+                        print()
                         await websocket.send(generar_confirmacion("100", prev_seq))
-                        continue
-
-                    lista.append(mensaje)
-                    await websocket.send(generar_confirmacion("000", seq))
+                    else:
+                        cant_paq_total = cant_paq
                         
-                    print(f"Mensaje: {mensaje}")
+                        lista.append(mensaje)
+                        prev_seq = seq
+                        await websocket.send(generar_confirmacion("000", seq))
+                        print(f"\033[32mMensaje: {mensaje} aceptado con éxito!\033[0m")
+                        print()
                 else:
+                    print("\033[31mMensaje \033[0m", mensaje ,"\033[31m rechazado por tamaño de paquete menor al mínimo. \033[0m")
                     await websocket.send(generar_confirmacion("101", prev_seq))
                         
-            print("largo lista : ", len(lista))
-            print("Paquetes recibidos con éxito! Texto completo: " , ''.join(lista))
+            print("\033[32mPaquetes recibidos con éxito! Texto completo: \033[0m" , ''.join(lista))
+            print("Número de paquetes recibidos: ", len(lista))
 
             lista = []    
 
